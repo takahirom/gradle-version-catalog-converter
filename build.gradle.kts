@@ -29,6 +29,9 @@ kotlin {
                     useFirefox()
                 }
             }
+            distribution {
+                directory = File("$projectDir/docs/")
+            }
         }
         binaries.executable()
     }
