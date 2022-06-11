@@ -1,4 +1,5 @@
 import androidx.compose.runtime.*
+import org.jetbrains.compose.web.css.background
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.*
@@ -36,8 +37,14 @@ class Lib(val group: String, val name: String, val version: String) {
 @NoLiveLiterals
 fun main() {
     var text: String by mutableStateOf(
-        """implementation 'androidx.core:core-ktx:1.7.0'
-        |implementation "androidx.compose.ui:ui:${'$'}compose_version"""".trimMargin()
+        """object AndroidX {
+  val coreKtx = "androidx.core:core-ktx:1.7.0"
+}
+implementation 'androidx.activity:activity-compose:1.3.1'
+testImplementation 'junit:junit:4.13.2'
+androidTestImplementation 'androidx.test.ext:junit:1.1.3'
+androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+implementation "androidx.compose.ui:ui:${'$'}compose_version"""""
 
     )
     var useDot: Boolean by mutableStateOf<Boolean>(false)
@@ -99,8 +106,17 @@ fun main() {
                 checked(useDot)
                 onChange { useDot = it.value }
             }
-            Span({ style { padding(15.px) } }) {
-                Pre {
+            Span({
+                style {
+                    padding(15.px)
+                }
+            }) {
+                Pre({
+                    style {
+                        padding(15.px)
+                        background("#CCCCCC")
+                    }
+                }) {
                     Text("$catalog")
                 }
             }
