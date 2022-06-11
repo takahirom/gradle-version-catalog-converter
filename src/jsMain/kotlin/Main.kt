@@ -1,11 +1,11 @@
 import androidx.compose.runtime.*
-import org.jetbrains.compose.web.css.*
-import org.jetbrains.compose.web.css.FlexDirection.Companion.Column
+import org.jetbrains.compose.web.css.padding
+import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.*
 import org.jetbrains.compose.web.renderComposable
 
 class Lib(val group: String, val name: String, val version: String) {
-    fun String.capitarize(upper: Boolean = false): String {
+    private fun String.capitarize(upper: Boolean = false): String {
         val str = this
         return buildString {
             var first = upper
@@ -69,13 +69,19 @@ fun main() {
             appendLine("[versions]")
             libs.groupBy { it.group }
                 .forEach { (_, libs: List<Lib>) ->
-                    appendLine(libs[0].groupName(useDot) + " = " + libs[0].version)
+                    appendLine(libs[0].groupName(useDot) + " = \"" + libs[0].version + "\"")
                 }
             appendLine("[libraries]")
             libs
                 .forEach { lib: Lib ->
                     // groovy-core = { module = "org.codehaus.groovy:groovy", version.ref = "groovy" }
-                    appendLine(lib.nameName(useDot) + " = { module = \"${lib.group}:${lib.name}\", version.ref = \"${lib.groupName(useDot)}\" }")
+                    appendLine(
+                        lib.nameName(useDot) + " = { module = \"${lib.group}:${lib.name}\", version.ref = \"${
+                            lib.groupName(
+                                useDot
+                            )
+                        }\" }"
+                    )
                 }
         }
     }
