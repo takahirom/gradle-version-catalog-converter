@@ -1,5 +1,6 @@
 import androidx.compose.runtime.*
 import org.jetbrains.compose.web.css.*
+import org.jetbrains.compose.web.css.FlexDirection.Companion.Column
 import org.jetbrains.compose.web.dom.*
 import org.jetbrains.compose.web.renderComposable
 
@@ -9,7 +10,7 @@ class Lib(val group: String, val name: String, val version: String) {
         return buildString {
             var first = upper
             str.forEach {
-                if (it == '.'|| it == '-') {
+                if (it == '.' || it == '-') {
                     first = true
                 } else {
                     if (first) {
@@ -23,8 +24,12 @@ class Lib(val group: String, val name: String, val version: String) {
         }
     }
 
-    fun groupName() = group.capitarize()
-    fun nameName() = groupName() + name.capitarize(true)
+    fun groupName(useDot: Boolean) = if (useDot) group else group.capitarize()
+    fun nameName(useDot: Boolean) = if (useDot) {
+        group + "-" + name
+    } else {
+        groupName(useDot) + name.capitarize(true)
+    }
 
 }
 
@@ -35,6 +40,7 @@ fun main() {
         |implementation "androidx.compose.ui:ui:${'$'}compose_version"""".trimMargin()
 
     )
+    var useDot: Boolean by mutableStateOf<Boolean>(false)
     val catalog: String by derivedStateOf {
         buildString {
             val libs = text
@@ -63,13 +69,13 @@ fun main() {
             appendLine("[versions]")
             libs.groupBy { it.group }
                 .forEach { (_, libs: List<Lib>) ->
-                    appendLine(libs[0].groupName() + " = " + libs[0].version)
+                    appendLine(libs[0].groupName(useDot) + " = " + libs[0].version)
                 }
             appendLine("[libraries]")
             libs
                 .forEach { lib: Lib ->
                     // groovy-core = { module = "org.codehaus.groovy:groovy", version.ref = "groovy" }
-                    appendLine(lib.nameName() + " = { module = \"${lib.group}:${lib.name}\", version.ref = \"${lib.groupName()}\" }")
+                    appendLine(lib.nameName(useDot) + " = { module = \"${lib.group}:${lib.name}\", version.ref = \"${lib.groupName(useDot)}\" }")
                 }
         }
     }
@@ -80,6 +86,12 @@ fun main() {
                 onInput {
                     text = it.value
                 }
+            }
+            Br()
+            Text("Use dot as name:")
+            CheckboxInput {
+                checked(useDot)
+                onChange { useDot = it.value }
             }
             Span({ style { padding(15.px) } }) {
                 Pre {
