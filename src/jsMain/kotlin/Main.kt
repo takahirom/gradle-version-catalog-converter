@@ -12,6 +12,10 @@ sealed interface Lib {
         override val version: String,
     ) : Lib {
         override fun groupName(useHyphen: Boolean) = if (useHyphen) group.hyphenation() else group.capitarize()
+        override fun useLib(): String {
+            return "libs." + nameName(false)
+        }
+
         fun nameName(useHyphen: Boolean) = if (useHyphen) {
             group.hyphenation() + "-" + name.hyphenation()
         } else {
@@ -24,6 +28,9 @@ sealed interface Lib {
         override val version: String,
     ) : Lib {
         override fun groupName(useHyphen: Boolean) = if (useHyphen) id.hyphenation() else id.capitarize()
+        override fun useLib(): String {
+            return "alias(libs.${groupName(false)})"
+        }
 
         fun idName(useHyphen: Boolean) = groupName(useHyphen)
     }
@@ -64,6 +71,8 @@ sealed interface Lib {
         }
     }
 
+    fun useLib(): String
+
 }
 
 @NoLiveLiterals
@@ -82,40 +91,9 @@ implementation "androidx.compose.ui:ui:${'$'}compose_version"""""
     )
     var useHyphenForVersion: Boolean by mutableStateOf<Boolean>(false)
     var useHyphenForLibraries: Boolean by mutableStateOf<Boolean>(true)
-    val catalog: String by derivedStateOf {
+    val tomlCatalog: String by derivedStateOf {
         buildString {
-            val libs = text
-                .lines()
-                .mapNotNull { line ->
-                    try {
-                        if (line.contains("id") && line.contains("version")) {
-                            val notQuote = "[^'\"]+"
-                            val quote = "['\"]"
-                            val match =
-                                Regex("$notQuote$quote($notQuote)$quote$notQuote$quote($notQuote)$quote$notQuote").find(
-                                    line
-                                )!!
-                            val (id, version) = match.destructured
-                            Lib.Plugin(id, version)
-                        } else if (line.contains("'")) {
-                            val (group, name, version) = line.trimStart { it != '\'' }.trimEnd { it != '\'' }
-                                .drop(1).dropLast(1)
-                                .split(":")
-                            Lib.Library(group, name, version)
-                        } else if (line.contains("\"")) {
-                            val (group, name, version) = line.trimStart { it != '"' }.trimEnd { it != '"' }
-                                .drop(1).dropLast(1)
-                                .split(":")
-
-                            Lib.Library(group, name, version)
-                        } else {
-                            null
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        null
-                    }
-                }
+            val libs = parseLibrary(text)
             appendLine("[versions]")
             libs.groupBy { it.groupName(useHyphenForVersion) }
                 .forEach { (versionName, libs: List<Lib>) ->
@@ -151,6 +129,14 @@ implementation "androidx.compose.ui:ui:${'$'}compose_version"""""
                 }
         }
     }
+    val tomlUseSide: String by derivedStateOf {
+        buildString {
+            parseLibrary(text)
+                .forEach {lib ->
+                    appendLine(lib.useLib())
+                }
+        }
+    }
     renderComposable(rootElementId = "root") {
         Div({ style { padding(25.px) } }) {
             TextArea {
@@ -172,6 +158,7 @@ implementation "androidx.compose.ui:ui:${'$'}compose_version"""""
                 onChange { useHyphenForLibraries = it.value }
             }
             Br()
+            Text("gradle/libs.versions.toml")
             Span({
                 style {
                     padding(15.px)
@@ -183,10 +170,59 @@ implementation "androidx.compose.ui:ui:${'$'}compose_version"""""
                         background("#CCCCCC")
                     }
                 }) {
-                    Text("$catalog")
+                    Text("$tomlCatalog")
+                }
+            }
+            Br()
+            Text("build.gradle")
+            Span({
+                style {
+                    padding(15.px)
+                }
+            }) {
+                Pre({
+                    style {
+                        padding(15.px)
+                        background("#CCCCCC")
+                    }
+                }) {
+                    Text("$tomlUseSide")
                 }
             }
         }
     }
 }
+
+private fun parseLibrary(text: String) = text
+    .lines()
+    .mapNotNull { line ->
+        try {
+            if (line.contains("id") && line.contains("version")) {
+                val notQuote = "[^'\"]+"
+                val quote = "['\"]"
+                val match =
+                    Regex("$notQuote$quote($notQuote)$quote$notQuote$quote($notQuote)$quote$notQuote").find(
+                        line
+                    )!!
+                val (id, version) = match.destructured
+                Lib.Plugin(id, version)
+            } else if (line.contains("'")) {
+                val (group, name, version) = line.trimStart { it != '\'' }.trimEnd { it != '\'' }
+                    .drop(1).dropLast(1)
+                    .split(":")
+                Lib.Library(group, name, version)
+            } else if (line.contains("\"")) {
+                val (group, name, version) = line.trimStart { it != '"' }.trimEnd { it != '"' }
+                    .drop(1).dropLast(1)
+                    .split(":")
+
+                Lib.Library(group, name, version)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
 
