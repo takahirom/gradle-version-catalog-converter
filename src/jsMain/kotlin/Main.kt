@@ -29,7 +29,7 @@ sealed interface Lib {
     ) : Lib {
         override fun groupName(useHyphen: Boolean) = if (useHyphen) id.hyphenation() else id.capitarize()
         override fun useLib(useHyphenForLibrary: Boolean): String {
-            return "alias(libs.${groupName(useHyphenForLibrary).replace("-", ".")})"
+            return "alias(libs.plugins.${groupName(useHyphenForLibrary).replace("-", ".")})"
         }
 
         fun idName(useHyphen: Boolean) = groupName(useHyphen)
