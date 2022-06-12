@@ -61,7 +61,7 @@ implementation "androidx.compose.ui:ui:${'$'}compose_version"""""
 
     )
     var useHyphenForVersion: Boolean by mutableStateOf<Boolean>(false)
-    var useHyphenForLibraries: Boolean by mutableStateOf<Boolean>(false)
+    var useHyphenForLibraries: Boolean by mutableStateOf<Boolean>(true)
     val catalog: String by derivedStateOf {
         buildString {
             val libs = text
