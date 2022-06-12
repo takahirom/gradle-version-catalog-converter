@@ -12,8 +12,8 @@ sealed interface Lib {
         override val version: String,
     ) : Lib {
         override fun groupName(useHyphen: Boolean) = if (useHyphen) group.hyphenation() else group.capitarize()
-        override fun useLib(): String {
-            return "libs." + nameName(false)
+        override fun useLib(useHyphenForLibrary: Boolean): String {
+            return "libs." + nameName(useHyphenForLibrary).replace("-", ".")
         }
 
         fun nameName(useHyphen: Boolean) = if (useHyphen) {
@@ -28,8 +28,8 @@ sealed interface Lib {
         override val version: String,
     ) : Lib {
         override fun groupName(useHyphen: Boolean) = if (useHyphen) id.hyphenation() else id.capitarize()
-        override fun useLib(): String {
-            return "alias(libs.${groupName(false)})"
+        override fun useLib(useHyphenForLibrary: Boolean): String {
+            return "alias(libs.${groupName(useHyphenForLibrary).replace("-", ".")})"
         }
 
         fun idName(useHyphen: Boolean) = groupName(useHyphen)
@@ -39,40 +39,7 @@ sealed interface Lib {
 
     val version: String
 
-    fun String.capitarize(upper: Boolean = false): String {
-        val str = this
-        return buildString {
-            var first = upper
-            str.forEach {
-                if (it == '.' || it == '-') {
-                    first = true
-                } else {
-                    if (first) {
-                        append(it.uppercase())
-                        first = false
-                    } else {
-                        append(it)
-                    }
-                }
-            }
-        }
-    }
-
-    fun String.hyphenation(): String {
-        val str = this
-        return buildString {
-            str.forEach {
-                if (it == '.' || it == '-') {
-                    append("-")
-                } else {
-                    append(it)
-                }
-            }
-        }
-    }
-
-    fun useLib(): String
-
+    fun useLib(useHyphenForLibrary: Boolean): String
 }
 
 @NoLiveLiterals
@@ -132,8 +99,8 @@ implementation "androidx.compose.ui:ui:${'$'}compose_version"""""
     val tomlUseSide: String by derivedStateOf {
         buildString {
             parseLibrary(text)
-                .forEach {lib ->
-                    appendLine(lib.useLib())
+                .forEach { lib ->
+                    appendLine(lib.useLib(useHyphenForLibraries))
                 }
         }
     }
@@ -226,3 +193,35 @@ private fun parseLibrary(text: String) = text
         }
     }
 
+
+fun String.capitarize(upper: Boolean = false): String {
+    val str = this
+    return buildString {
+        var first = upper
+        str.forEach {
+            if (it == '.' || it == '-') {
+                first = true
+            } else {
+                if (first) {
+                    append(it.uppercase())
+                    first = false
+                } else {
+                    append(it)
+                }
+            }
+        }
+    }
+}
+
+fun String.hyphenation(): String {
+    val str = this
+    return buildString {
+        str.forEach {
+            if (it == '.' || it == '-') {
+                append("-")
+            } else {
+                append(it)
+            }
+        }
+    }
+}
