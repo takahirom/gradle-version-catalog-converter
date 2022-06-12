@@ -49,10 +49,11 @@ fun main() {
   val coreKtx = "androidx.core:core-ktx:1.7.0"
 }
   id "org.jetbrains.kotlin.android" version "1.6.10" apply false
+id 'com.android.application' version '7.4.0-alpha03'
 implementation 'androidx.activity:activity-compose:1.3.1'
 testImplementation 'junit:junit:4.13.2'
-androidTestImplementation 'androidx.test.ext:junit:1.1.3'
-androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+androidTestImplementation('androidx.test.ext:junit:1.1.3')
+androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
 implementation "androidx.compose.ui:ui:${'$'}compose_version"""""
 
     )
@@ -165,7 +166,7 @@ private fun parseLibrary(text: String) = text
     .mapNotNull { line ->
         try {
             if (line.contains("id") && line.contains("version")) {
-                val notQuote = "[^'\"]+"
+                val notQuote = "[^'\"]*"
                 val quote = "['\"]"
                 val match =
                     Regex("$notQuote$quote($notQuote)$quote$notQuote$quote($notQuote)$quote$notQuote").find(
