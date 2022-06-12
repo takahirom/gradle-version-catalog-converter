@@ -16,10 +16,19 @@ sealed interface Lib {
             return "libs." + nameName(useHyphenForLibrary).replace("-", ".")
         }
 
-        fun nameName(useHyphen: Boolean) = if (useHyphen) {
-            group.hyphenation() + "-" + name.hyphenation()
-        } else {
-            groupName(false) + name.capitarize(true)
+        fun nameName(useHyphen: Boolean): String {
+            val groupHyphenation = group.hyphenation()
+            val nameHyphenation = name.hyphenation()
+            val lastSubstring = groupHyphenation.substring(
+                groupHyphenation.length - nameHyphenation.length,
+                groupHyphenation.length
+            )
+            val isSameLastInGroup = lastSubstring == nameHyphenation
+            return if (useHyphen) {
+                groupHyphenation + if (isSameLastInGroup) "" else "-" + nameHyphenation
+            } else {
+                groupName(false) + if (isSameLastInGroup) "" else name.capitarize(true)
+            }
         }
     }
 
