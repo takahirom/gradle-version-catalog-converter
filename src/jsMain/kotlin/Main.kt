@@ -160,13 +160,13 @@ implementation "androidx.compose.ui:ui:${'$'}compose_version"""""
                 }
             }
             Br()
-            Text("Use \"-\" as version name:")
+            Text("Use \"-\" for version name:")
             CheckboxInput {
                 checked(useHyphenForVersion)
                 onChange { useHyphenForVersion = it.value }
             }
             Br()
-            Text("Use \"-\" as library name:")
+            Text("Use \"-\" for library name:")
             CheckboxInput {
                 checked(useHyphenForLibraries)
                 onChange { useHyphenForLibraries = it.value }
