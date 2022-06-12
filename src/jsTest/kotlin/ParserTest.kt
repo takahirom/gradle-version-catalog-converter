@@ -1,9 +1,9 @@
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class ParcerTest {
+class ParserTest {
     @Test
-    fun parcerTest() {
+    fun parserTest() {
         assertEquals(
             "implementation \"androidx.compose.ui:ui:${'$'}compose_version\""
                 .parseLibraries()[0],
