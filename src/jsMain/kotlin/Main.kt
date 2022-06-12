@@ -6,7 +6,7 @@ import org.jetbrains.compose.web.dom.*
 import org.jetbrains.compose.web.renderComposable
 
 sealed interface Lib {
-    class Library(
+    data class Library(
         val group: String,
         val name: String,
         override val version: String,
@@ -23,7 +23,7 @@ sealed interface Lib {
         }
     }
 
-    class Plugin(
+    data class Plugin(
         val id: String,
         override val version: String,
     ) : Lib {
@@ -61,7 +61,7 @@ implementation "androidx.compose.ui:ui:${'$'}compose_version"""""
     var useHyphenForLibraries: Boolean by mutableStateOf<Boolean>(true)
     val tomlCatalog: String by derivedStateOf {
         buildString {
-            val libs = parseLibrary(text)
+            val libs = text.parseLibraries()
             appendLine("[versions]")
             libs.groupBy { it.groupName(useHyphenForVersion) }
                 .forEach { (versionName, libs: List<Lib>) ->
@@ -99,7 +99,7 @@ implementation "androidx.compose.ui:ui:${'$'}compose_version"""""
     }
     val tomlUseSide: String by derivedStateOf {
         buildString {
-            parseLibrary(text)
+            text.parseLibraries()
                 .forEach { lib ->
                     appendLine(lib.useLib(useHyphenForLibraries))
                 }
@@ -161,11 +161,10 @@ implementation "androidx.compose.ui:ui:${'$'}compose_version"""""
     }
 }
 
-private fun parseLibrary(text: String) = text
-    .lines()
+fun String.parseLibraries() = lines()
     .mapNotNull { line ->
         try {
-            if (line.contains("id") && line.contains("version")) {
+            if (line.contains("id ") && line.contains("version")) {
                 val notQuote = "[^'\"]*"
                 val quote = "['\"]"
                 val match =
