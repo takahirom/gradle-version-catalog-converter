@@ -6,4 +6,4 @@ You can try it here.
 
 https://takahirom.github.io/gradle-version-catalog-converter/
 
-![gradle-version-catalog-converter](https://user-images.githubusercontent.com/1386930/173211640-721f70d1-5003-4b78-8cc0-fe9d7b86566b.gif)
+![gradle-version-catalog-converter](https://user-images.githubusercontent.com/1386930/173219381-487560e5-5c51-4611-8eb2-454033387936.gif)
