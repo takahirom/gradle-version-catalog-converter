@@ -25,11 +25,24 @@ class Lib(val group: String, val name: String, val version: String) {
         }
     }
 
-    fun groupName(useDot: Boolean) = if (useDot) group else group.capitarize()
-    fun nameName(useDot: Boolean) = if (useDot) {
-        group + "-" + name
+    private fun String.hyphenation(): String {
+        val str = this
+        return buildString {
+            str.forEach {
+                if (it == '.' || it == '-') {
+                    append("-")
+                } else {
+                    append(it)
+                }
+            }
+        }
+    }
+
+    fun groupName(useHyphen: Boolean) = if (useHyphen) group.hyphenation() else group.capitarize()
+    fun nameName(useHyphen: Boolean) = if (useHyphen) {
+        group.hyphenation() + "-" + name.hyphenation()
     } else {
-        groupName(useDot) + name.capitarize(true)
+        groupName(false) + name.capitarize(true)
     }
 
 }
@@ -47,7 +60,8 @@ androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 implementation "androidx.compose.ui:ui:${'$'}compose_version"""""
 
     )
-    var useDot: Boolean by mutableStateOf<Boolean>(false)
+    var useHyphenForVersion: Boolean by mutableStateOf<Boolean>(false)
+    var useHyphenForLibraries: Boolean by mutableStateOf<Boolean>(false)
     val catalog: String by derivedStateOf {
         buildString {
             val libs = text
@@ -76,16 +90,16 @@ implementation "androidx.compose.ui:ui:${'$'}compose_version"""""
             appendLine("[versions]")
             libs.groupBy { it.group }
                 .forEach { (_, libs: List<Lib>) ->
-                    appendLine(libs[0].groupName(useDot) + " = \"" + libs[0].version + "\"")
+                    appendLine(libs[0].groupName(useHyphenForVersion) + " = \"" + libs[0].version + "\"")
                 }
             appendLine("[libraries]")
             libs
                 .forEach { lib: Lib ->
                     // groovy-core = { module = "org.codehaus.groovy:groovy", version.ref = "groovy" }
                     appendLine(
-                        lib.nameName(useDot) + " = { module = \"${lib.group}:${lib.name}\", version.ref = \"${
+                        lib.nameName(useHyphenForLibraries) + " = { module = \"${lib.group}:${lib.name}\", version.ref = \"${
                             lib.groupName(
-                                useDot
+                                useHyphenForVersion
                             )
                         }\" }"
                     )
@@ -101,11 +115,18 @@ implementation "androidx.compose.ui:ui:${'$'}compose_version"""""
                 }
             }
             Br()
-            Text("Use dot as name:")
+            Text("Use \"-\" as version name:")
             CheckboxInput {
-                checked(useDot)
-                onChange { useDot = it.value }
+                checked(useHyphenForVersion)
+                onChange { useHyphenForVersion = it.value }
             }
+            Br()
+            Text("Use \"-\" as library name:")
+            CheckboxInput {
+                checked(useHyphenForLibraries)
+                onChange { useHyphenForLibraries = it.value }
+            }
+            Br()
             Span({
                 style {
                     padding(15.px)
