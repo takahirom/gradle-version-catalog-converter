@@ -5,8 +5,34 @@ import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.*
 import org.jetbrains.compose.web.renderComposable
 
-class Lib(val group: String, val name: String, val version: String) {
-    private fun String.capitarize(upper: Boolean = false): String {
+sealed interface Lib {
+    class Library(
+        val group: String,
+        val name: String,
+        override val version: String,
+    ) : Lib {
+        override fun groupName(useHyphen: Boolean) = if (useHyphen) group.hyphenation() else group.capitarize()
+        fun nameName(useHyphen: Boolean) = if (useHyphen) {
+            group.hyphenation() + "-" + name.hyphenation()
+        } else {
+            groupName(false) + name.capitarize(true)
+        }
+    }
+
+    class Plugin(
+        val id: String,
+        override val version: String,
+    ) : Lib {
+        override fun groupName(useHyphen: Boolean) = if (useHyphen) id.hyphenation() else id.capitarize()
+
+        fun idName(useHyphen: Boolean) = groupName(useHyphen)
+    }
+
+    fun groupName(useHyphen: Boolean): String
+
+    val version: String
+
+    fun String.capitarize(upper: Boolean = false): String {
         val str = this
         return buildString {
             var first = upper
@@ -25,7 +51,7 @@ class Lib(val group: String, val name: String, val version: String) {
         }
     }
 
-    private fun String.hyphenation(): String {
+    fun String.hyphenation(): String {
         val str = this
         return buildString {
             str.forEach {
@@ -38,13 +64,6 @@ class Lib(val group: String, val name: String, val version: String) {
         }
     }
 
-    fun groupName(useHyphen: Boolean) = if (useHyphen) group.hyphenation() else group.capitarize()
-    fun nameName(useHyphen: Boolean) = if (useHyphen) {
-        group.hyphenation() + "-" + name.hyphenation()
-    } else {
-        groupName(false) + name.capitarize(true)
-    }
-
 }
 
 @NoLiveLiterals
@@ -53,6 +72,7 @@ fun main() {
         """object AndroidX {
   val coreKtx = "androidx.core:core-ktx:1.7.0"
 }
+  id "org.jetbrains.kotlin.android" version "1.6.10" apply false
 implementation 'androidx.activity:activity-compose:1.3.1'
 testImplementation 'junit:junit:4.13.2'
 androidTestImplementation 'androidx.test.ext:junit:1.1.3'
@@ -68,17 +88,26 @@ implementation "androidx.compose.ui:ui:${'$'}compose_version"""""
                 .lines()
                 .mapNotNull { line ->
                     try {
-                        if (line.contains("'")) {
+                        if (line.contains("id") && line.contains("version")) {
+                            val notQuote = "[^'\"]+"
+                            val quote = "['\"]"
+                            val match =
+                                Regex("$notQuote$quote($notQuote)$quote$notQuote$quote($notQuote)$quote$notQuote").find(
+                                    line
+                                )!!
+                            val (id, version) = match.destructured
+                            Lib.Plugin(id, version)
+                        } else if (line.contains("'")) {
                             val (group, name, version) = line.trimStart { it != '\'' }.trimEnd { it != '\'' }
                                 .drop(1).dropLast(1)
                                 .split(":")
-                            Lib(group, name, version)
+                            Lib.Library(group, name, version)
                         } else if (line.contains("\"")) {
                             val (group, name, version) = line.trimStart { it != '"' }.trimEnd { it != '"' }
                                 .drop(1).dropLast(1)
                                 .split(":")
 
-                            Lib(group, name, version)
+                            Lib.Library(group, name, version)
                         } else {
                             null
                         }
@@ -88,16 +117,32 @@ implementation "androidx.compose.ui:ui:${'$'}compose_version"""""
                     }
                 }
             appendLine("[versions]")
-            libs.groupBy { it.group }
-                .forEach { (_, libs: List<Lib>) ->
-                    appendLine(libs[0].groupName(useHyphenForVersion) + " = \"" + libs[0].version + "\"")
+            libs.groupBy { it.groupName(useHyphenForVersion) }
+                .forEach { (versionName, libs: List<Lib>) ->
+                    appendLine(versionName + " = \"" + libs[0].version + "\"")
                 }
+            appendLine()
             appendLine("[libraries]")
             libs
-                .forEach { lib: Lib ->
+                .filterIsInstance<Lib.Library>()
+                .forEach { lib: Lib.Library ->
                     // groovy-core = { module = "org.codehaus.groovy:groovy", version.ref = "groovy" }
                     appendLine(
                         lib.nameName(useHyphenForLibraries) + " = { module = \"${lib.group}:${lib.name}\", version.ref = \"${
+                            lib.groupName(
+                                useHyphenForVersion
+                            )
+                        }\" }"
+                    )
+                }
+            appendLine()
+            appendLine("[plugins]")
+            libs
+                .filterIsInstance<Lib.Plugin>()
+                .forEach { lib: Lib.Plugin ->
+                    // groovy-core = { module = "org.codehaus.groovy:groovy", version.ref = "groovy" }
+                    appendLine(
+                        lib.idName(useHyphenForLibraries) + " = { id = \"${lib.id}\", version.ref = \"${
                             lib.groupName(
                                 useHyphenForVersion
                             )
