@@ -12,20 +12,31 @@ sealed interface Lib {
         override val version: String,
     ) : Lib {
         override fun groupName(useHyphen: Boolean) = if (useHyphen) group.hyphenation() else group.capitarize()
-        override fun useLib(useHyphenForLibrary: Boolean): String {
-            return "libs." + nameName(useHyphenForLibrary).replace("-", ".")
+        override fun useLib(useHyphenForLibrary: Boolean, kts: Boolean): String {
+            return if (kts) {
+                "implementation(" + "libs." + nameName(useHyphenForLibrary).replace("-", ".") + ")"
+            } else {
+                "implementation " + "libs." + nameName(useHyphenForLibrary).replace("-", ".")
+            }
         }
 
         fun nameName(useHyphen: Boolean): String {
             val groupHyphenation = group.hyphenation()
-            val nameHyphenation = name.hyphenation()
+            var nameHyphenation = name.hyphenation()
+
+            val groupStrArray = groupHyphenation.split("-")
+            val nameStrArray = nameHyphenation.split("-")
+            nameHyphenation = nameStrArray.filterIndexed { _, s ->
+                !groupStrArray.contains(s)
+            }.joinToString("-")
+            console.log("group: $groupHyphenation name: $nameHyphenation")
             val lastSubstring = groupHyphenation.substring(
                 groupHyphenation.length - nameHyphenation.length,
                 groupHyphenation.length
             )
             val isSameLastInGroup = lastSubstring == nameHyphenation
             return if (useHyphen) {
-                groupHyphenation + if (isSameLastInGroup) "" else "-" + nameHyphenation
+                groupHyphenation + if (isSameLastInGroup) "" else "-$nameHyphenation"
             } else {
                 groupName(false) + if (isSameLastInGroup) "" else name.capitarize(true)
             }
@@ -37,7 +48,7 @@ sealed interface Lib {
         override val version: String,
     ) : Lib {
         override fun groupName(useHyphen: Boolean) = if (useHyphen) id.hyphenation() else id.capitarize()
-        override fun useLib(useHyphenForLibrary: Boolean): String {
+        override fun useLib(useHyphenForLibrary: Boolean, kts: Boolean): String {
             return "alias(libs.plugins.${groupName(useHyphenForLibrary).replace("-", ".")})"
         }
 
@@ -48,7 +59,7 @@ sealed interface Lib {
 
     val version: String
 
-    fun useLib(useHyphenForLibrary: Boolean): String
+    fun useLib(useHyphenForLibrary: Boolean, kts: Boolean): String
 }
 
 @NoLiveLiterals
@@ -110,7 +121,15 @@ implementation "androidx.compose.ui:ui:${'$'}compose_version"""""
         buildString {
             text.parseLibraries()
                 .forEach { lib ->
-                    appendLine(lib.useLib(useHyphenForLibraries))
+                    appendLine(lib.useLib(useHyphenForLibraries, false))
+                }
+        }
+    }
+    val tomlUseSideByKts: String by derivedStateOf {
+        buildString {
+            text.parseLibraries()
+                .forEach { lib ->
+                    appendLine(lib.useLib(useHyphenForLibraries, true))
                 }
         }
     }
@@ -166,6 +185,22 @@ implementation "androidx.compose.ui:ui:${'$'}compose_version"""""
                     Text("$tomlUseSide")
                 }
             }
+            Br()
+            Text("build.gradle.kts")
+            Span({
+                style {
+                    padding(15.px)
+                }
+            }) {
+                Pre({
+                    style {
+                        padding(15.px)
+                        background("#CCCCCC")
+                    }
+                }) {
+                    Text(tomlUseSideByKts)
+                }
+            }
         }
     }
 }
@@ -191,7 +226,6 @@ fun String.parseLibraries() = lines()
                 val (group, name, version) = line.trimStart { it != '"' }.trimEnd { it != '"' }
                     .drop(1).dropLast(1)
                     .split(":")
-
                 Lib.Library(group, name, version)
             } else {
                 null
