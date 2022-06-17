@@ -29,7 +29,6 @@ sealed interface Lib {
             nameHyphenation = nameStrArray.filterIndexed { _, s ->
                 !groupStrArray.contains(s)
             }.joinToString("-")
-            console.log("group: $groupHyphenation name: $nameHyphenation")
             val lastSubstring = groupHyphenation.substring(
                 groupHyphenation.length - nameHyphenation.length,
                 groupHyphenation.length
