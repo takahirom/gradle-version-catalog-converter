@@ -1,5 +1,5 @@
 # gradle-version-catalog-converter
-Convert `implementation 'androidx.core:core-ktx:1.7.0'` into `androidxCoreCoreKtx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }`
+Convert `implementation 'androidx.core:core-ktx:1.7.0'` into `androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }`
 
 
 You can try it here.
